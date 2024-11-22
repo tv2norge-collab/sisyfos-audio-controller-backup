@@ -431,7 +431,7 @@ export class MainThreadHandlers {
                             const oldLabel =
                                 state.channels[0].chMixerConnection[0].channel[
                                     assignedChannel.channelIndex
-                                ].label
+                                ].label || ''
                             const newLabel = oldLabel.startsWith(
                                 state.settings[0].labelIgnorePrefix
                             )
