@@ -8,6 +8,8 @@ export interface Faders {
 export interface ChannelReference {
     mixerIndex: number
     channelIndex: number
+    /** When linking faders, it tracks the index of a fader this channel originated from */
+    borrowedFromFaderIndex?: number
 }
 
 export interface Fader {
@@ -288,29 +290,58 @@ export const faders = (
                 currentFader.isLinked = false
                 return nextState
             }
-            const nextFader = nextState[0].fader[action.faderIndex + 1]
+            const nextFaderIndex = action.faderIndex + 1
+            const nextFader = nextState[0].fader[nextFaderIndex]
             if (wasLinked) {
                 if (!action.linkOn) {
-                    const channels = currentFader.assignedChannels
-                    if ((channels?.length ?? 0) > 1) {
-                        const channelToReassign = channels?.pop()
-                        if (
-                            channelToReassign &&
-                            nextFader?.capabilities?.isLinkableSecondary
-                        ) {
-                            nextFader.assignedChannels?.push(channelToReassign)
-                            nextFader.faderLevel = currentFader.faderLevel
-                        }
+                    const channelsToUnlink =
+                        currentFader.assignedChannels?.filter(
+                            (channelReference) =>
+                                channelReference.borrowedFromFaderIndex != null,
+                        )
+                    if (channelsToUnlink?.length) {
+                        channelsToUnlink.forEach((channelReference) => {
+                            if (channelReference.borrowedFromFaderIndex == null)
+                                return
+                            const targetFader =
+                                nextState[0].fader[
+                                    channelReference.borrowedFromFaderIndex
+                                ]
+                            if (targetFader) {
+                                currentFader.assignedChannels =
+                                    currentFader.assignedChannels?.filter(
+                                        (ref) => ref !== channelReference,
+                                    )
+                                delete channelReference.borrowedFromFaderIndex
+                                targetFader.assignedChannels =
+                                    targetFader.assignedChannels ?? []
+                                targetFader.assignedChannels.push(
+                                    channelReference,
+                                )
+                                targetFader.faderLevel = currentFader.faderLevel
+                                targetFader.inputGain = currentFader.inputGain
+                            }
+                        })
                     }
                 }
             } else {
                 if (action.linkOn) {
-                    const channelToReassign = nextFader?.assignedChannels?.pop()
+                    const channelsToReassign: ChannelReference[] | undefined = nextFader?.assignedChannels?.map(
+                        (channel) => ({
+                            ...channel,
+                            borrowedFromFaderIndex: nextFaderIndex,
+                        }),
+                    )
                     if (
-                        channelToReassign &&
+                        channelsToReassign?.length &&
                         nextFader.capabilities?.isLinkableSecondary
                     ) {
-                        currentFader.assignedChannels?.push(channelToReassign)
+                        nextFader.assignedChannels = []
+                        currentFader.assignedChannels =
+                            currentFader.assignedChannels ?? []
+                        currentFader.assignedChannels.push(
+                            ...channelsToReassign,
+                        )
                     }
                 }
             }
@@ -333,8 +364,11 @@ export const faders = (
                     channelIndex: index,
                     faderIndex: index,
                 })
-                fader.capabilities.isLinkablePrimary = false
-                fader.capabilities.isLinkableSecondary = false
+                fader.capabilities = {
+                    ...fader.capabilities,
+                    isLinkablePrimary: false,
+                    isLinkableSecondary: false,
+                }
                 fader.isLinked = false
             })
             return nextState
