@@ -540,4 +540,3 @@ export class MixerGenericConnection {
         this.fade(fadeTime, mixerIndex, channelIndex, outputLevel[0], 0)
     }
 }
-

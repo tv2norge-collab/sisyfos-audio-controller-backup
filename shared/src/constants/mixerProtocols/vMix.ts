@@ -113,16 +113,12 @@ export const VMix: MixerProtocol = {
                 ],
                 PFL_OFF: [
                     {
-                        mixerMessage: 'SoloOff',
-                        value: 1,
-                        type: 'f',
+                        mixerMessage: 'SoloOff'
                     },
                 ],
                 PFL_ON: [
                     {
                         mixerMessage: 'SoloOn',
-                        value: 1,
-                        type: 'f',
                     },
                 ],
                 AUX_LEVEL: [
