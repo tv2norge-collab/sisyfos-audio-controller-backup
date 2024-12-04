@@ -129,6 +129,11 @@ export const MidasMaster: MixerProtocol = {
                         mixerMessage: '/meters/1',
                     },
                 ],
+                CHANNEL_NAME: [
+                    {
+                        mixerMessage: '/ch/{channel}/config/name',
+                    },
+                ],
                 [FxParam.GainTrim]: [
                     {
                         mixerMessage: '/ch/{channel}/preamp/trim',
@@ -357,6 +362,11 @@ export const MidasMaster: MixerProtocol = {
                 CHANNEL_OUT_GAIN: [
                     {
                         mixerMessage: '/ch/{channel}/mix/fader',
+                    },
+                ],
+                CHANNEL_NAME: [
+                    {
+                        mixerMessage: '/ch/{channel}/config/name',
                     },
                 ],
                 [FxParam.GainTrim]: [

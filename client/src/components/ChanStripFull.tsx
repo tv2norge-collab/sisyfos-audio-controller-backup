@@ -46,28 +46,6 @@ class ChanStripFull extends React.PureComponent<
         super(props)
     }
 
-    handleShowRoutingOptions() {
-        this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_OPTION,
-            channel: this.props.faderIndex,
-        })
-        this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_CHAN_STRIP_FULL,
-            channel: -1,
-        })
-    }
-
-    handleShowMonitorOptions() {
-        this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_MONITOR_OPTIONS,
-            channel: this.props.faderIndex,
-        })
-        this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_CHAN_STRIP_FULL,
-            channel: -1,
-        })
-    }
-
     handleClose = () => {
         this.props.dispatch({
             type: SettingsActionTypes.TOGGLE_SHOW_CHAN_STRIP_FULL,
@@ -448,22 +426,6 @@ class ChanStripFull extends React.PureComponent<
                         >
                             X
                         </button>
-                        {window.location.search.includes('settings=1') ? (
-                            <button
-                                className="button half"
-                                onClick={() => this.handleShowRoutingOptions()}
-                            >
-                                Channel-Fader Routing
-                            </button>
-                        ) : null}
-                        {window.location.search.includes('settings=1') ? (
-                            <button
-                                className="button half"
-                                onClick={() => this.handleShowMonitorOptions()}
-                            >
-                                Monitor Routing
-                            </button>
-                        ) : null}
                     </div>
                     <hr />
                     {this.parameters()}

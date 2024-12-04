@@ -43,6 +43,26 @@ class Storage extends React.PureComponent<StorageProps & Store> {
         })
     }
 
+    handleShowRoutingOptions() {
+        this.props.dispatch({
+            type: SettingsActionTypes.TOGGLE_SHOW_OPTION,
+            channel: 0, // this.props.faderIndex,
+        })
+        this.props.dispatch({
+            type: SettingsActionTypes.TOGGLE_SHOW_STORAGE,
+        })
+    }
+
+    handleShowMonitorOptions() {
+        this.props.dispatch({
+            type: SettingsActionTypes.TOGGLE_SHOW_MONITOR_OPTIONS,
+            channel: 0, // this.props.faderIndex,
+        })
+        this.props.dispatch({
+            type: SettingsActionTypes.TOGGLE_SHOW_STORAGE,
+        })
+    }
+
     saveFile() {
         let fileName = window.prompt('Enter filename :', 'newfile')
         if (
@@ -147,8 +167,20 @@ class Storage extends React.PureComponent<StorageProps & Store> {
                 <br />
                 {window.location.search.includes('settings=1') ? (
                     <React.Fragment>
+                        <button
+                            className="routing-button"
+                            onClick={() => this.handleShowRoutingOptions()}
+                        >
+                            Channel-Fader Routing
+                        </button>
+                        <button
+                            className="routing-button"
+                            onClick={() => this.handleShowMonitorOptions()}
+                        >
+                            Monitor Routing
+                        </button>
                         <h3>SAVE ROUTING :</h3>
-                        <button onClick={this.saveFile} className="button">
+                        <button onClick={this.saveFile} className="save-button">
                             SAVE
                         </button>
                         <hr />

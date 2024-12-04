@@ -6,6 +6,7 @@
     width: 400px;
     overflow: auto;
     max-height: 90vh;
+    min-height: 60vh;
     background-color: rgb(31, 31, 31);
     border-color: rgb(124, 124, 124);
     border-style: solid;
@@ -16,23 +17,67 @@
     color: #fff;
 }
 
-.channel-route-body > h2 {
+.channel-route-header {
+    width: 100%;
+    border: none;
+    background-color: rgb(31, 31, 31);
+    color: #fff;
     border-bottom: 1px solid #999;
     margin: 0;
-    padding: 10px 0;
-    line-height: 50px;
-    text-align: center;
+}
+
+.channel-route-selector {
+    width: 80%;
+    line-height: 50px;;
+    background-color: rgb(33, 33, 33);
+    font-size: 1.5em;
+    font-weight: bold;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.channel-route-selector::before {
+    content: '⌄'; /* Unicode down arrow */
+    position: absolute;
+    right: 20px;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.channel-route-selector:focus {
+    outline: none;
+}
+
+.channel-route-selector {
+    background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+}
+
+.channel-route-selector option {
+    background-color: rgb(31, 31, 31);
+    color: #fff;
+    padding: 10px;
+    font-size: 1em;
 }
 
 .channel-route-mixer-name {
     font-size: 150%;
-    border-bottom: 1px solid #999;
     margin: 0;
-    padding: 10px 0;
     line-height: 50px;
     text-align: center;
 }
-
+.channel-type-name {
+    border-top: 1px solid #999;
+    margin: 0;
+    margin-top: 20px;
+    padding: 2px 0;
+    line-height: 30px;
+    text-align: center;
+}
 .channel-route-text {
     color: dimgray;
     margin: 0;

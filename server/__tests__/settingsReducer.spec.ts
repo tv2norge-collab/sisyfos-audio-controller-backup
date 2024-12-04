@@ -1,4 +1,4 @@
-import indexReducer from '../../shared/src/reducers/indexReducer'
+import { createEnhancedReducer } from '../../shared/src/reducers/indexReducer'
 import {
     SettingsActionTypes,
 } from '../../shared/src/actions/settingsActions'
@@ -10,6 +10,7 @@ const parsedFullStoreJSON = fs.readFileSync(
 )
 
 describe('Test redux settingsReducer actions', () => {
+    const reducer = createEnhancedReducer()
     /**
      * TEST TOGGLE_SHOW_CHAN_STRIP:
      */
@@ -19,7 +20,7 @@ describe('Test redux settingsReducer actions', () => {
         let nextState = JSON.parse(parsedFullStoreJSON)
         nextState.settings[0].showChanStrip = 3
         expect(
-            indexReducer(parsedFullStore, {
+            reducer(parsedFullStore, {
                 type: SettingsActionTypes.TOGGLE_SHOW_CHAN_STRIP,
                 channel: 3,
             })
@@ -27,7 +28,7 @@ describe('Test redux settingsReducer actions', () => {
 
         parsedFullStore = JSON.parse(parsedFullStoreJSON)
         expect(
-            indexReducer(nextState, {
+            reducer(nextState, {
                 type: SettingsActionTypes.TOGGLE_SHOW_CHAN_STRIP,
                 channel: -1,
             })
@@ -43,7 +44,7 @@ describe('Test redux settingsReducer actions', () => {
         let nextState = JSON.parse(parsedFullStoreJSON)
         nextState.settings[0].showOptions = 3
         expect(
-            indexReducer(parsedFullStore, {
+            reducer(parsedFullStore, {
                 type: SettingsActionTypes.TOGGLE_SHOW_OPTION,
                 channel: 3,
             })
@@ -51,7 +52,7 @@ describe('Test redux settingsReducer actions', () => {
 
         parsedFullStore = JSON.parse(parsedFullStoreJSON)
         expect(
-            indexReducer(nextState, {
+            reducer(nextState, {
                 type: SettingsActionTypes.TOGGLE_SHOW_OPTION,
                 channel: 3,
             })
@@ -67,7 +68,7 @@ describe('Test redux settingsReducer actions', () => {
         let nextState = JSON.parse(parsedFullStoreJSON)
         nextState.settings[0].showSettings = true
         expect(
-            indexReducer(parsedFullStore, {
+            reducer(parsedFullStore, {
                 type: SettingsActionTypes.TOGGLE_SHOW_SETTINGS,
             })
         ).toEqual(nextState)
@@ -82,7 +83,7 @@ describe('Test redux settingsReducer actions', () => {
         let nextState = JSON.parse(parsedFullStoreJSON)
         nextState.settings[0].showStorage = true
         expect(
-            indexReducer(parsedFullStore, {
+            reducer(parsedFullStore, {
                 type: SettingsActionTypes.TOGGLE_SHOW_STORAGE,
             })
         ).toEqual(nextState)
@@ -96,7 +97,7 @@ describe('Test redux settingsReducer actions', () => {
         let parsedFullStore = JSON.parse(parsedFullStoreJSON)
         let nextState = JSON.parse(parsedFullStoreJSON)
         expect(
-            indexReducer(parsedFullStore, {
+            reducer(parsedFullStore, {
                 type: SettingsActionTypes.UPDATE_SETTINGS,
                 settings: parsedFullStore.settings[0],
             })

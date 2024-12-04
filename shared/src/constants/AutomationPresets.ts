@@ -70,7 +70,7 @@ export interface AutomationChannelAPI {
     pgmOn: boolean
     voOn: boolean
     pstOn: boolean
-    visible: boolean
+    showChannel: boolean
     muteOn: boolean
     inputGain: number
     inputSelector: number

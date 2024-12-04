@@ -69,7 +69,7 @@ export class VMixMixerConnection implements MixerConnection {
     vMixCommandConnection: ConnectionTCP
     /** We use a separate connection for updates to prevent blocking any commands */
     vMixFeedbackConnection: ConnectionTCP
-    vMixXmlPollingInterval: NodeJS.Timer
+    vMixXmlPollingInterval: NodeJS.Timeout
 
     audioOn: Record<string, boolean> = {}
     lastLevel: Record<string, number> = {}

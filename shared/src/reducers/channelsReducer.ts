@@ -1,7 +1,7 @@
 import {
-    ChannelActions,
     ChannelActionTypes,
 } from '../actions/channelActions'
+import { RootAction, RootState } from './indexReducer'
 
 export interface Channels {
     chMixerConnection: ChMixerConnection[]
@@ -68,8 +68,12 @@ export const defaultChannelsReducerState = (
 
 export const channels = (
     state = defaultChannelsReducerState([{ numberOfTypeInCh: [1] }]),
-    action: ChannelActions
+    action: RootAction,
+    fullState?: RootState
 ): Array<Channels> => {
+    if (!(action.type in ChannelActionTypes)) {
+        return state;
+    }
     let nextState = [
         {
             chMixerConnection: [...state[0].chMixerConnection],

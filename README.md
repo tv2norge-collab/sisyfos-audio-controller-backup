@@ -63,17 +63,17 @@ Routing setups can be stored in STORAGE. So it´s possible to have different Rou
 ### Run as Docker: (On linux)
 
 ```
-docker pull tv2media/sisyfos-audio-controller:develop
+docker pull olzzon/sisyfos-audio-controller:develop
 docker volume create sisyfos-vol
-sudo docker run --mount source=sisyfos-vol,target=/opt/sisyfos-audio-controller/storage --network="host" --restart always tv2media/sisyfos-audio-controller:develop
+sudo docker run --mount source=sisyfos-vol,target=/opt/sisyfos-audio-controller/storage --network="host" --restart always olzzon/sisyfos-audio-controller:develop
 ```
 
 ### Run as Docker: (On windows)
 
 ```
-docker pull tv2media/sisyfos-audio-controller:develop
+docker pull olzzon/sisyfos-audio-controller:develop
 docker volume create sisyfos-vol
-docker run --mount source=sisyfos-vol,target=/opt/sisyfos-audio-controller/storage -p 1176:1176 -p 5255:5255 --restart always tv2media/sisyfos-audio-controller:develop
+docker run --mount source=sisyfos-vol,target=/opt/sisyfos-audio-controller/storage -p 1176:1176 -p 5255:5255 --restart always olzzon/sisyfos-audio-controller:develop
 ```
 
 ### Install Local node host:
@@ -81,7 +81,7 @@ docker run --mount source=sisyfos-vol,target=/opt/sisyfos-audio-controller/stora
 (Be aware that a server reload will quit server and you need an external source to restart)
 
 ```
-git clone https://github.com/tv2media/sisyfos-audio-controller.git
+git clone https://github.com/olzzon/sisyfos-audio-controller.git
 cd sisyfos-audio-controller
 yarn
 yarn build
@@ -195,7 +195,7 @@ Skaarhoj in RAW panel mode is supported for rotary buttons including labels.
 
 The monitor sends are the same as those on the Channel Strip.
 
-## Automation Support:
+## Automation Support via API:
 
 It´s possible to control Sisyfos from an automationsystem, for it to act as middleware.
 
@@ -210,7 +210,7 @@ To set the state send these OSC commands from you Automation to Sisyfos Port: 52
 /ch/1/mix/pgm - integer: { 0, 1 or 2 } - float { fadetime in ms }
 
 #### Set channel to PST:
-
+If showPFL in setting is enabled, this also sets the state of PFL
 /ch/1/mix/pst - integer: { 0, 1 or 2 } (the integer defines: 0 - Off, 1 - Pgm On, 2 - Voice Over)
 
 #### Mute channel:
@@ -237,7 +237,7 @@ export interface AutomationChannelAPI {
     pgmOn?: boolean
     voOn?: boolean
     pstOn?: boolean
-    visible?: boolean
+    showChannel?: boolean
     muteOn?: boolean
     inputGain?: number
     inputSelector?: number
@@ -286,7 +286,7 @@ export interface AutomationChannelAPI {
     pgmOn: boolean
     voOn: boolean
     pstOn: boolean
-    visible: boolean
+    showChannel: boolean
     muteOn: boolean
     inputGain: number
     inputSelector: number
@@ -332,3 +332,16 @@ _In response to a ping, sisyfos will reply with /pong and the provided value OR 
 Localization can be found in: /client/i18n.ts
 
 If we end up with a huge amount of translations we move the translations to seperate files, but for now we keep it simple.
+
+
+## Automation support from via Audio Mixer:
+
+The ability to use use a character prefix (default is #) on the connected Audio Mixer to define whether a channel is in AUTO or MANUAL mode.
+If the prefix is not found, the channel is in AUTO mode.
+This is a 2-way communication, so if the user toggles the AUTO/MANUAL in the UI, the corresponding channel on the Audio Mixer will have the prefix added or removed.
+Labels on the UI will allways hide the prefix.
+
+### Pgm On follows Audio Mixer: 
+The default behaviour of Sisyfos is to have a target level. This is the level that the fader will fade to when the PGM button is pressed.
+But when either in manual or in auto mode, it's possible to let the fader behave in sync with the audio mixer. 
+Settings the "PGM On follows Audio Mixer" in the settings, let's the sisyfos fader always follow level of the audio mixer, and when the level is zero, the PGM button turns off. If level is above zero, the PGM button will behave as a fadeout button.

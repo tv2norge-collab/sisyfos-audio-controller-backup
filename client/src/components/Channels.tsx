@@ -5,9 +5,7 @@ import ClassNames from 'classnames'
 import Channel from './Channel'
 import '../assets/css/Channels.css'
 import { Store, UnknownAction } from 'redux'
-import {
-    SettingsActionTypes,
-} from '../../../shared/src/actions/settingsActions'
+import { SettingsActionTypes } from '../../../shared/src/actions/settingsActions'
 import ChannelRouteSettings from './ChannelRouteSettings'
 import ChanStrip from './ChanStrip'
 import ChannelMonitorOptions from './ChannelMonitorOptions'
@@ -18,6 +16,7 @@ import {
     MixerSettings,
     Settings,
     PageType,
+    ThirdOutRowButtonType,
 } from '../../../shared/src/reducers/settingsReducer'
 import {
     SOCKET_NEXT_MIX,
@@ -38,7 +37,9 @@ interface ChannelsInjectProps {
     mixersOnline: boolean
 }
 
-class Channels extends React.Component<ChannelsProps & ChannelsInjectProps & Store> {
+class Channels extends React.Component<
+    ChannelsProps & ChannelsInjectProps & Store
+> {
     constructor(props: any) {
         super(props)
         this.props.settings.showMonitorOptions = -1
@@ -49,13 +50,21 @@ class Channels extends React.Component<ChannelsProps & ChannelsInjectProps & Sto
         }
     }
 
-    public componentDidUpdate(prevProps: Readonly<ChannelsProps & ChannelsInjectProps & Store<any, UnknownAction, unknown>>) {
+    public componentDidUpdate(
+        prevProps: Readonly<
+            ChannelsProps &
+                ChannelsInjectProps &
+                Store<any, UnknownAction, unknown>
+        >
+    ) {
         if (prevProps.page !== this.props.page) {
             this.handlePages(PageType.CustomPage, this.props.page)
         }
     }
 
-    public shouldComponentUpdate(nextProps: ChannelsProps & ChannelsInjectProps): boolean {
+    public shouldComponentUpdate(
+        nextProps: ChannelsProps & ChannelsInjectProps
+    ): boolean {
         return (
             this.props.page !== nextProps.page ||
             this.props.settings.showOptions !==
@@ -101,25 +110,25 @@ class Channels extends React.Component<ChannelsProps & ChannelsInjectProps & Sto
 
     handleShowSettings() {
         this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_SETTINGS
+            type: SettingsActionTypes.TOGGLE_SHOW_SETTINGS,
         })
     }
 
     handleShowStorage() {
         this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_STORAGE
+            type: SettingsActionTypes.TOGGLE_SHOW_STORAGE,
         })
     }
 
     handleShowPagesSetting() {
         this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_PAGES_SETUP
+            type: SettingsActionTypes.TOGGLE_SHOW_PAGES_SETUP,
         })
     }
 
     handleShowLabelSetting() {
         this.props.dispatch({
-            type: SettingsActionTypes.TOGGLE_SHOW_LABEL_SETTINGS
+            type: SettingsActionTypes.TOGGLE_SHOW_LABEL_SETTINGS,
         })
     }
 
@@ -211,7 +220,7 @@ class Channels extends React.Component<ChannelsProps & ChannelsInjectProps & Sto
         const curPage = this.props.settings.currentPage
         switch (curPage.type) {
             case PageType.All:
-                return this.props.faders.map((value, index) => (
+                return this.props.faders.map((_value, index) => (
                     <Channel faderIndex={index} key={index} />
                 ))
             case PageType.CustomPage:
@@ -271,7 +280,7 @@ class Channels extends React.Component<ChannelsProps & ChannelsInjectProps & Sto
                 ) : null}
                 <div className="channels-body-inner">{this.renderFaders()}</div>
                 <br />
-                {window.location.search.includes('sidebar=0') ? null :
+                {window.location.search.includes('sidebar=0') ? null : (
                     <div className="channels-mix-body">
                         <div className="top">
                             {this.props.mixersOnline ? (
@@ -348,7 +357,10 @@ class Channels extends React.Component<ChannelsProps & ChannelsInjectProps & Sto
                         </div>
                         <div className="mid">
                             {this.renderAllManualButton()}
-                            {!this.props.settings.showPfl && (
+                            {(this.props.settings.thirdOutRowButton ===
+                                ThirdOutRowButtonType.CUE_NEXT ||
+                                this.props.settings.thirdOutRowButton ===
+                                    ThirdOutRowButtonType.PST) && (
                                 <React.Fragment>
                                     <button
                                         className="button channels-clear-button"
@@ -371,7 +383,7 @@ class Channels extends React.Component<ChannelsProps & ChannelsInjectProps & Sto
                         </div>
                         <div className="bot">{this.renderPageButtons()}</div>
                     </div>
-                }
+                )}
             </div>
         )
     }
@@ -389,6 +401,4 @@ const mapStateToProps = (state: any): ChannelsInjectProps => {
     }
 }
 
-export default connect<ChannelsInjectProps, any, any>(mapStateToProps)(
-    Channels
-)
+export default connect<ChannelsInjectProps, any, any>(mapStateToProps)(Channels)

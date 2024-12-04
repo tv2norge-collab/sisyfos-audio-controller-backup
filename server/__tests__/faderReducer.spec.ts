@@ -1,8 +1,6 @@
-import indexReducer from '../../shared/src/reducers/indexReducer'
+import { createEnhancedReducer } from '../../shared/src/reducers/indexReducer'
 import { Fader, Faders } from '../../shared/src/reducers/fadersReducer'
-import {
-    FaderActionTypes,
-} from '../../shared/src/actions/faderActions'
+import { FaderActionTypes } from '../../shared/src/actions/faderActions'
 
 import fs from 'fs'
 const parsedSimpleStoreJSON = fs.readFileSync(
@@ -15,6 +13,9 @@ const parsedFullStoreJSON = fs.readFileSync(
 )
 
 describe('Test redux faderReducers actions', () => {
+    // Create an instance of the enhanced reducer before tests
+    const reducer = createEnhancedReducer()
+
     /**
      * TEST ALL SET ACTIONS
      */
@@ -22,7 +23,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].faderLevel = 0.5
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.SET_FADER_LEVEL,
                 faderIndex: 0,
                 level: 0.5,
@@ -34,7 +35,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].pgmOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.SET_PGM,
                 faderIndex: 0,
                 pgmOn: true,
@@ -46,7 +47,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].voOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.SET_VO,
                 faderIndex: 0,
                 voOn: true,
@@ -58,7 +59,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].pstOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.SET_PST,
                 faderIndex: 0,
                 pstOn: true,
@@ -70,7 +71,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].pflOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.SET_PFL,
                 faderIndex: 0,
                 pflOn: true,
@@ -82,7 +83,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].muteOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.SET_MUTE,
                 faderIndex: 0,
                 muteOn: true,
@@ -94,7 +95,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].label = 'NEW LABEL'
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.SET_FADER_LABEL,
                 faderIndex: 0,
                 label: 'NEW LABEL',
@@ -106,7 +107,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].pstVoOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.SET_PST_VO,
                 faderIndex: 0,
                 pstVoOn: true,
@@ -122,7 +123,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].pgmOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.TOGGLE_PGM,
                 faderIndex: 0,
             })
@@ -133,7 +134,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].voOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.TOGGLE_VO,
                 faderIndex: 0,
             })
@@ -144,7 +145,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].pstOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.TOGGLE_PST,
                 faderIndex: 0,
             })
@@ -155,7 +156,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].pflOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.TOGGLE_PFL,
                 faderIndex: 0,
             })
@@ -166,7 +167,7 @@ describe('Test redux faderReducers actions', () => {
         let parsedInitialStore = JSON.parse(parsedSimpleStoreJSON)
         parsedInitialStore.faders[0].fader[0].muteOn = true
         expect(
-            indexReducer(JSON.parse(parsedSimpleStoreJSON), {
+            reducer(JSON.parse(parsedSimpleStoreJSON), {
                 type: FaderActionTypes.TOGGLE_MUTE,
                 faderIndex: 0,
             })
@@ -183,7 +184,7 @@ describe('Test redux faderReducers actions', () => {
         for (let i = 10; i < 14; i++) {
             newState.faders[0].fader[i].pstOn = true
             expect(
-                indexReducer(parsedFullStore, {
+                reducer(parsedFullStore, {
                     type: FaderActionTypes.SET_PST,
                     faderIndex: i,
                     pstOn: true,
@@ -193,7 +194,7 @@ describe('Test redux faderReducers actions', () => {
 
         parsedFullStore = JSON.parse(parsedFullStoreJSON)
         expect(
-            indexReducer(newState, { type: FaderActionTypes.CLEAR_PST })
+            reducer(newState, { type: FaderActionTypes.CLEAR_PST })
         ).toEqual(parsedFullStore)
     })
 
@@ -207,7 +208,7 @@ describe('Test redux faderReducers actions', () => {
         for (let i = 10; i < 14; i++) {
             newState.faders[0].fader[i].voOn = true
             expect(
-                indexReducer(parsedFullStore, {
+                reducer(parsedFullStore, {
                     type: FaderActionTypes.SET_VO,
                     faderIndex: i,
                     voOn: true,
@@ -218,7 +219,7 @@ describe('Test redux faderReducers actions', () => {
         for (let i = 6; i < 8; i++) {
             newState.faders[0].fader[i].pgmOn = true
             expect(
-                indexReducer(
+                reducer(
                     parsedFullStore,
                     //storeSetPgm(i, true)
                     {
@@ -232,7 +233,7 @@ describe('Test redux faderReducers actions', () => {
 
         parsedFullStore = JSON.parse(parsedFullStoreJSON)
         expect(
-            indexReducer(
+            reducer(
                 newState,
                 //storeFadeToBlack()
                 { type: FaderActionTypes.FADE_TO_BLACK }
@@ -250,7 +251,7 @@ describe('Test redux faderReducers actions', () => {
         for (let i = 10; i < 14; i++) {
             newState.faders[0].fader[i].pstVoOn = true
             expect(
-                indexReducer(parsedFullStore, {
+                reducer(parsedFullStore, {
                     type: FaderActionTypes.SET_PST_VO,
                     faderIndex: i,
                     pstVoOn: true,
@@ -261,7 +262,7 @@ describe('Test redux faderReducers actions', () => {
         for (let i = 6; i < 8; i++) {
             newState.faders[0].fader[i].pstOn = true
             expect(
-                indexReducer(parsedFullStore, {
+                reducer(parsedFullStore, {
                     type: FaderActionTypes.SET_PST,
                     faderIndex: i,
                     pstOn: true,
@@ -279,7 +280,7 @@ describe('Test redux faderReducers actions', () => {
         }
 
         expect(
-            indexReducer(
+            reducer(
                 newState,
                 //storeNextMix()
                 { type: FaderActionTypes.NEXT_MIX }
@@ -297,7 +298,7 @@ describe('Test redux faderReducers actions', () => {
         for (let i = 10; i < 14; i++) {
             newState.faders[0].fader[i].pstVoOn = true
             expect(
-                indexReducer(parsedFullStore, {
+                reducer(parsedFullStore, {
                     type: FaderActionTypes.SET_PST_VO,
                     faderIndex: i,
                     pstVoOn: true,
@@ -308,7 +309,7 @@ describe('Test redux faderReducers actions', () => {
         for (let i = 6; i < 8; i++) {
             newState.faders[0].fader[i].pstOn = true
             expect(
-                indexReducer(parsedFullStore, {
+                reducer(parsedFullStore, {
                     type: FaderActionTypes.SET_PST,
                     faderIndex: i,
                     pstOn: true,
@@ -326,9 +327,9 @@ describe('Test redux faderReducers actions', () => {
         }
 
         // First X_MIX:
-        expect(indexReducer(newState, 
-            { type: FaderActionTypes.X_MIX }
-            )).toEqual(parsedFullStore)
+        expect(
+            reducer(newState, { type: FaderActionTypes.X_MIX })
+        ).toEqual(parsedFullStore)
 
         // SETUP Expected for second X_MIX:
         let finalState = JSON.parse(parsedFullStoreJSON)
@@ -340,10 +341,13 @@ describe('Test redux faderReducers actions', () => {
         }
 
         // SECOND X_MIX:
-        expect(indexReducer(newState, 
-            //storeXmix()
-            { type: FaderActionTypes.X_MIX }
-            )).toEqual(finalState)
+        expect(
+            reducer(
+                newState,
+                //storeXmix()
+                { type: FaderActionTypes.X_MIX }
+            )
+        ).toEqual(finalState)
     })
 
     /**
@@ -355,9 +359,11 @@ describe('Test redux faderReducers actions', () => {
 
         newState.faders[0].fader[10].showChannel = false
         expect(
-            indexReducer(parsedFullStore, 
-                { type: FaderActionTypes.SHOW_CHANNEL, faderIndex: 10, showChannel: false }
-                )
+            reducer(parsedFullStore, {
+                type: FaderActionTypes.SHOW_CHANNEL,
+                faderIndex: 10,
+                showChannel: false,
+            })
         ).toEqual(newState)
     })
 
@@ -374,14 +380,11 @@ describe('Test redux faderReducers actions', () => {
         let fullFaderState: Faders = { fader: faders, vuMeters: [] }
 
         expect(
-            indexReducer(
-                parsedFullStore,
-                {
-                    type: FaderActionTypes.SET_COMPLETE_FADER_STATE,
-                    allState: fullFaderState,
-                    numberOfFaders: 24,
-                }
-            )
+            reducer(parsedFullStore, {
+                type: FaderActionTypes.SET_COMPLETE_FADER_STATE,
+                allState: fullFaderState,
+                numberOfFaders: 24,
+            })
         ).toEqual(newState)
     })
 })
