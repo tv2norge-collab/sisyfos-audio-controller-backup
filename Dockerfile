@@ -1,16 +1,11 @@
 # BUILD IMAGE
 FROM node:18.16-alpine
 RUN apk add --no-cache git
-
-RUN corepack enable
-RUN corepack prepare yarn@4.1.0 --activate
-
 WORKDIR /opt/sisyfos-audio-controller
-
 COPY . .
-RUN yarn install
+RUN yarn --check-files --frozen-lockfile
 RUN yarn build
-RUN yarn workspaces focus --all --production
+RUN yarn --check-files --frozen-lockfile --production --force
 RUN yarn cache clean
 
 # DEPLOY IMAGE
