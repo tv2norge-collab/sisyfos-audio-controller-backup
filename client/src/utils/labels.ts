@@ -17,7 +17,7 @@ export function getChannelLabel(
         state.settings[0].labelControlsIgnoreAutomation &&
         label?.startsWith(state.settings[0].labelIgnorePrefix)
     ) {
-        label = label.slice(1)
+        label = label.slice(state.settings[0].labelIgnorePrefix.length)
     }
     return label
 }

@@ -441,7 +441,7 @@ export class MainThreadHandlers {
                             const newLabel = oldLabel.startsWith(
                                 state.settings[0].labelIgnorePrefix
                             )
-                                ? oldLabel.slice(1)
+                                ? oldLabel.slice(state.settings[0].labelIgnorePrefix.length)
                                 : oldLabel
                             store.dispatch({
                                 type: ChannelActionTypes.SET_CHANNEL_LABEL,
