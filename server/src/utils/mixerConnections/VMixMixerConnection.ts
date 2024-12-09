@@ -476,7 +476,7 @@ export class VMixMixerConnection implements MixerConnection {
     private sendOutMessage(
         vMixMessage: string,
         inputNumber: number,
-        value: string | number,
+        value: string | number | undefined,
     ) {
         if (state.settings[0].mixers[this.mixerIndex].mixerOnline) {
             logger.trace(
@@ -713,37 +713,37 @@ export class VMixMixerConnection implements MixerConnection {
         )
         for (const inputsPreset of data) {
             for (const inputNumber of inputsPreset.inputNumbers) {
-                const channelIndex = this.lastState.findIndex(
-                    (input) => input.number === inputNumber,
-                )
-                const assignedFaderIndex =
-                    this.getAssignedFaderIndex(channelIndex)
-                if (inputsPreset.resetChannelMatrix) {
-                    const inputSelected = (2 << 16) | (1 << 8)
-                    this.hack_rearrangeAudioChannels(inputSelected, inputNumber)
-                    store.dispatch({
-                        type: FaderActionTypes.SET_INPUT_SELECTOR,
-                        faderIndex: assignedFaderIndex,
-                        selected: inputSelected,
-                    })
-                }
-                if (inputsPreset.resetGain) {
-                    store.dispatch({
-                        type: FaderActionTypes.SET_INPUT_GAIN,
-                        faderIndex: assignedFaderIndex,
-                        level: 0,
-                    })
-                }
-                if (inputsPreset.linkSeparateMono) {
-                    global.mainThreadHandler.setLink(assignedFaderIndex, true)
-                }
-                for (const command of inputsPreset.commands) {
-                    this.sendOutMessage(
-                        command.name,
-                        inputNumber,
-                        command.value ?? '',
-                    )
-                }
+                this.lastState.forEach((input, channelIndex) => {
+                    if (input.number !== inputNumber) return
+                    const assignedFaderIndex =
+                        this.getAssignedFaderIndex(channelIndex)
+                    if (inputsPreset.resetChannelMatrix) {
+                        const inputSelected = (2 << 16) | (1 << 8)
+                        this.hack_rearrangeAudioChannels(inputSelected, inputNumber)
+                        store.dispatch({
+                            type: FaderActionTypes.SET_INPUT_SELECTOR,
+                            faderIndex: assignedFaderIndex,
+                            selected: inputSelected,
+                        })
+                    }
+                    if (inputsPreset.resetGain) {
+                        store.dispatch({
+                            type: FaderActionTypes.SET_INPUT_GAIN,
+                            faderIndex: assignedFaderIndex,
+                            level: 0,
+                        })
+                    }
+                    if (inputsPreset.linkSeparateMono) {
+                        global.mainThreadHandler.setLink(assignedFaderIndex, true)
+                    }
+                    for (const command of inputsPreset.commands) {
+                        this.sendOutMessage(
+                            command.name,
+                            inputNumber,
+                            command.value ?? '',
+                        )
+                    }
+                })
             }
         }
         global.mainThreadHandler.updateFullClientStore()

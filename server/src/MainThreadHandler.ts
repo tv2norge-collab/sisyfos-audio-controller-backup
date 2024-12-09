@@ -124,6 +124,8 @@ export class MainThreadHandlers {
         })
         mixerGenericConnection.updateOutLevel(faderIndex, -1)
         mixerGenericConnection.updateOutLevel(faderIndex + 1, -1)
+        mixerGenericConnection.updateInputGain(faderIndex)
+        mixerGenericConnection.updateInputGain(faderIndex + 1)
         this.reIndexAssignedChannelsRelation()
         this.updateFullClientStore()
     }
