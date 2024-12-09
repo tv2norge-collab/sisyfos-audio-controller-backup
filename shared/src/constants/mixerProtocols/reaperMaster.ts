@@ -36,7 +36,7 @@ export const ReaperMaster: MixerProtocol = {
                     {
                         mixerMessage: '/track/{channel}/name',
                         value: 0,
-                        type: 'f',
+                        type: 's',
                         min: 0,
                         max: 1,
                         zero: 0.75,
@@ -58,7 +58,7 @@ export const ReaperMaster: MixerProtocol = {
                     {
                         mixerMessage: '/track/{channel}/name',
                         value: 0,
-                        type: 'f',
+                        type: 's',
                         min: 0,
                         max: 1,
                         zero: 0.75,
@@ -88,7 +88,7 @@ export const ReaperMaster: MixerProtocol = {
         },
         {
             channelTypeName: 'MASTER',
-            channelTypeColor: '#0f0f3f',
+            channelTypeColor: '#1f2f1f',
             fromMixer: {
                 CHANNEL_OUT_GAIN: [
                     {

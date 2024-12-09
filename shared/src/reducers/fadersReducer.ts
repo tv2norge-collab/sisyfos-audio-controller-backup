@@ -1,5 +1,7 @@
-import { FaderActionTypes, FaderActions } from '../actions/faderActions'
+import { FaderActionTypes } from '../actions/faderActions'
 import { NumberOfChannels } from './channelsReducer'
+import { RootAction, RootState } from './indexReducer'
+import { PgmOnFollowMixerBehaviour } from './settingsReducer'
 export interface Faders {
     fader: Array<Fader>
     vuMeters: Array<VuMeters>
@@ -53,7 +55,7 @@ export interface VuMeters {
 
 export const defaultFadersReducerState = (
     numberOfFaders: number,
-    numberOfChannels?: NumberOfChannels[],
+    numberOfChannels?: NumberOfChannels[]
 ): Faders[] => {
     let defaultObj: Array<Faders> = [
         {
@@ -102,10 +104,15 @@ export const defaultFadersReducerState = (
     return defaultObj
 }
 
+
 export const faders = (
     state = defaultFadersReducerState(0),
-    action: FaderActions,
+    action: RootAction,
+    fullState?: RootState
 ): Array<Faders> => {
+    if (!(action.type in FaderActionTypes)) {
+        return state;
+    }
     let nextState = [
         {
             vuMeters: [...state[0].vuMeters],
@@ -144,8 +151,22 @@ export const faders = (
             nextState[0].fader[action.faderIndex] = action.state
             return nextState
         case FaderActionTypes.SET_FADER_LEVEL:
+            if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.Auto && !nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (action.level >= 0.01)
+            } else if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.Manual && nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (action.level >= 0.01)
+            } else if (fullState.settings[0].pgmOnFollowsMixer ===
+                PgmOnFollowMixerBehaviour.Global
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (action.level >= 0.01)
+            } 
             nextState[0].fader[action.faderIndex].faderLevel = action.level
-
             return nextState
         case FaderActionTypes.SET_INPUT_GAIN:
             nextState[0].fader[action.faderIndex].inputGain = action.level
@@ -170,12 +191,54 @@ export const faders = (
             nextState[0].fader[action.faderIndex].label = action.label
             return nextState
         case FaderActionTypes.TOGGLE_PGM:
-            nextState[0].fader[action.faderIndex].pgmOn =
-                !nextState[0].fader[action.faderIndex].pgmOn
+            if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.Auto && !nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else if (
+                fullState.settings[0].pgmOnFollowsMixer === 
+                PgmOnFollowMixerBehaviour.Manual && nextState[0].fader[action.faderIndex].ignoreAutomation
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else if (fullState.settings[0].pgmOnFollowsMixer ===
+                PgmOnFollowMixerBehaviour.Global
+            ) {
+                nextState[0].fader[action.faderIndex].pgmOn = (nextState[0].fader[action.faderIndex].faderLevel >= 0.01)
+            } else {
+                nextState[0].fader[action.faderIndex].pgmOn =
+                !nextState[0].fader[action.faderIndex].pgmOn  
+            }
+            nextState[0].fader[action.faderIndex].voOn = false
+            return nextState
+        case FaderActionTypes.TOGGLE_PGM_UI:
+                 if (
+                    fullState.settings[0].pgmOnFollowsMixer === 
+                    PgmOnFollowMixerBehaviour.Auto && !nextState[0].fader[action.faderIndex].ignoreAutomation
+                ) {
+                    nextState[0].fader[action.faderIndex].pgmOn = false
+                    nextState[0].fader[action.faderIndex].faderLevel = 0
+                } else if (
+                    fullState.settings[0].pgmOnFollowsMixer === 
+                    PgmOnFollowMixerBehaviour.Manual && !nextState[0].fader[action.faderIndex].ignoreAutomation
+                ) {
+                    nextState[0].fader[action.faderIndex].pgmOn = false
+                    nextState[0].fader[action.faderIndex].faderLevel = 0
+                } else if (fullState.settings[0].pgmOnFollowsMixer ===
+                    PgmOnFollowMixerBehaviour.Global
+                ) {
+                    nextState[0].fader[action.faderIndex].pgmOn = false
+                    nextState[0].fader[action.faderIndex].faderLevel = 0
+                } else {
+                    nextState[0].fader[action.faderIndex].pgmOn =
+                    !nextState[0].fader[action.faderIndex].pgmOn
+                }
             nextState[0].fader[action.faderIndex].voOn = false
             return nextState
         case FaderActionTypes.SET_PGM:
             nextState[0].fader[action.faderIndex].pgmOn = !!action.pgmOn
+            nextState[0].fader[action.faderIndex].pgmOn = nextState[0].fader[action.faderIndex].faderLevel >= 0.01
+
             nextState[0].fader[action.faderIndex].voOn = false
             return nextState
         case FaderActionTypes.TOGGLE_VO:
@@ -235,8 +298,13 @@ export const faders = (
                 !!action.showInMiniMonitor
             return nextState
         case FaderActionTypes.IGNORE_AUTOMATION: //channel // ignoreAutomation
-            nextState[0].fader[action.faderIndex].ignoreAutomation =
-                !nextState[0].fader[action.faderIndex].ignoreAutomation
+            if (action.state === undefined) {
+                nextState[0].fader[action.faderIndex].ignoreAutomation =
+                    !nextState[0].fader[action.faderIndex].ignoreAutomation
+            } else {
+                nextState[0].fader[action.faderIndex].ignoreAutomation =
+                    !!action.state
+            }
             return nextState
         case FaderActionTypes.X_MIX: //none
             nextState[0].fader.forEach((item, index) => {
@@ -369,6 +437,7 @@ export const faders = (
                     isLinkablePrimary: false,
                     isLinkableSecondary: false,
                 }
+
                 fader.isLinked = false
             })
             return nextState
@@ -383,7 +452,7 @@ export const faders = (
             // remove object if empty:
             if (
                 Object.entries(
-                    nextState[0].fader[action.faderIndex].capabilities!,
+                    nextState[0].fader[action.faderIndex].capabilities!
                 ).length === 0
             ) {
                 delete nextState[0].fader[action.faderIndex].capabilities
@@ -409,7 +478,7 @@ export const faders = (
                 ([index, label]: [string, string]) => {
                     nextState[0].fader[Number(index)].userLabel =
                         label === '' ? undefined : label
-                },
+                }
             )
             return nextState
         case FaderActionTypes.FLUSH_FADER_LABELS:
@@ -429,7 +498,7 @@ function setAssignedChannel(
         mixerIndex: number
         channelIndex: number
         assigned: boolean
-    },
+    }
 ) {
     let newAssignments: ChannelReference[] =
         nextState[0].fader[action.faderIndex].assignedChannels || []
@@ -449,11 +518,11 @@ function setAssignedChannel(
             })
             newAssignments.sort(
                 (n1: ChannelReference, n2: ChannelReference) =>
-                    n1.channelIndex - n2.channelIndex,
+                    n1.channelIndex - n2.channelIndex
             )
             newAssignments.sort(
                 (n1: ChannelReference, n2: ChannelReference) =>
-                    n1.mixerIndex - n2.mixerIndex,
+                    n1.mixerIndex - n2.mixerIndex
             )
         }
     } else {

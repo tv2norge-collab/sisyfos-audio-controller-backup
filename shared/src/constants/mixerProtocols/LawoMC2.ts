@@ -2,7 +2,7 @@ import {
     MixerProtocol,
     emptyMixerMessage,
     VuLabelConversionType,
-    MixerConnectionTypes
+    MixerConnectionTypes,
 } from '../MixerProtocolInterface'
 
 export const LawoMC2: MixerProtocol = {
@@ -106,6 +106,16 @@ export const LawoMC2: MixerProtocol = {
                         zero: 0,
                     },
                 ],
+                CHANNEL_MUTE_ON: [
+                    {
+                        mixerMessage: 'Channels.Inputs.${channel}.Mute.Mute',
+                        value: true,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
             },
             toMixer: {
                 CHANNEL_OUT_GAIN: [
@@ -116,6 +126,17 @@ export const LawoMC2: MixerProtocol = {
                         type: 'real',
                         min: -128,
                         max: 12,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_NAME: [
+                    {
+                        mixerMessage:
+                            'Channels.Inputs.${channel}.General.User Label',
+                        value: 0,
+                        type: 'real',
+                        min: -200,
+                        max: 20,
                         zero: 0,
                     },
                 ],
@@ -180,6 +201,212 @@ export const LawoMC2: MixerProtocol = {
                         mixerMessage:
                             'Channels.Inputs.${channel}.Automix.Automix Active',
                         value: false,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_MUTE_ON: [
+                    {
+                        mixerMessage: 'Channels.Inputs.${channel}.Mute.Mute',
+                        value: true,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+            },
+        },
+        {
+            channelTypeName: 'Groups',
+            channelTypeColor: '#2f5f2f',
+            fromMixer: {
+                CHANNEL_OUT_GAIN: [
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Fader.Fader Level',
+                        value: 0,
+                        type: 'real',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_NAME: [
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.General.User Label',
+                        value: 0,
+                        type: 'real',
+                        min: -200,
+                        max: 20,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_INPUT_GAIN: [
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Signal Processing.Digital Amplifier.DigiAmp Level',
+                        value: 0,
+                        type: 'int',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                        maxLabel: 12,
+                        minLabel: -128,
+                    },
+                ],
+                CHANNEL_INPUT_SELECTOR: [
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Left to Both',
+                        value: 0,
+                        type: 'bool',
+                        label: 'LR',
+                    },
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Left to Both',
+                        value: true,
+                        type: 'bool',
+                        label: 'LL',
+                    },
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Right to Both',
+                        value: true,
+                        type: 'bool',
+                        label: 'RR',
+                    },
+                ],
+                PFL: [
+                    {
+                        mixerMessage: 'Channels.Groups.${channel}.Listen.PFL',
+                        value: 0,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_AMIX: [
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Automix.Automix Active',
+                        value: false,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_MUTE_ON: [
+                    {
+                        mixerMessage: 'Channels.Groups.${channel}.Mute.Mute',
+                        value: true,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+            },
+            toMixer: {
+                CHANNEL_OUT_GAIN: [
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Fader.Fader Level',
+                        value: 0,
+                        type: 'real',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_NAME: [
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.General.User Label',
+                        value: 0,
+                        type: 'real',
+                        min: -200,
+                        max: 20,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_INPUT_GAIN: [
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Signal Processing.Digital Amplifier.DigiAmp Level',
+                        value: 0,
+                        type: 'int',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                        maxLabel: 12,
+                        minLabel: -128,
+                    },
+                ],
+                CHANNEL_INPUT_SELECTOR: [
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Left to Both',
+                        value: 0,
+                        type: 'bool',
+                        label: 'LR',
+                    },
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Left to Both',
+                        value: 1,
+                        type: 'bool',
+                        label: 'LL',
+                    },
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Right to Both',
+                        value: 1,
+                        type: 'bool',
+                        label: 'RR',
+                    },
+                ],
+                PFL_ON: [
+                    {
+                        mixerMessage: 'Channels.Groups.${channel}.Listen.PFL',
+                        value: true,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+                PFL_OFF: [
+                    {
+                        mixerMessage: 'Channels.Groups.${channel}.Listen.PFL',
+                        value: false,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_AMIX: [
+                    {
+                        mixerMessage:
+                            'Channels.Groups.${channel}.Automix.Automix Active',
+                        value: false,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ],
+                CHANNEL_MUTE_ON: [
+                    {
+                        mixerMessage: 'Channels.Groups.${channel}.Mute.Mute',
+                        value: true,
                         type: 'boolean',
                         min: -128,
                         max: 12,

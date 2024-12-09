@@ -2,17 +2,24 @@ import { ReduxStore } from '../../../shared/src/reducers/store'
 
 export function getChannelLabel(
     state: ReduxStore,
-    faderIndex: number
+    faderIndex: number,
 ): string | undefined {
-    return state.channels[0].chMixerConnection
+    let label = state.channels[0].chMixerConnection
         .flatMap((conn) =>
             conn.channel.map((ch) => ({
                 assignedFader: ch.assignedFader,
                 label: ch.label,
-            }))
+            })),
         )
         .filter((ch) => ch.label && ch.label !== '')
         .find((ch) => ch.assignedFader === faderIndex)?.label
+    if (
+        state.settings[0].labelControlsIgnoreAutomation &&
+        label?.startsWith(state.settings[0].labelIgnorePrefix)
+    ) {
+        label = label.slice(state.settings[0].labelIgnorePrefix.length)
+    }
+    return label
 }
 
 export function getFaderLabel(faderIndex: number, defaultName = 'CH'): string {

@@ -11,7 +11,7 @@
     },
     "devDependencies": {
         "@types/express": "^4.17.21",
-        "@types/jest": "^29.5.11",
+        "@types/jest": "^29.5.14",
         "@types/node": "^18.16.0",
         "@types/webmidi": "^2.0.10",
         "jest": "^29.7.0",
@@ -23,18 +23,18 @@
         "@tv2media/logger": "^2.0.2",
         "atem-connection": "^3.4.0",
         "casparcg-connection": "^5.1.0",
-        "emberplus-connection": "^0.2.1",
+        "emberplus-connection": "0.2.2",
         "express": "^4.18.2",
-        "node-emberplus": "^3.0.5",
+        "node-emberplus": "^3.0.8",
         "node-vmix": "^1.7.1",
-        "osc": "^2.4.4",
+        "osc": "^2.4.5",
         "performance-now": "^2.1.0",
         "redux": "^5.0.1",
+        "shared": "file:../shared",
         "socket.io": "^4.7.4",
         "tslib": "^2.6.2",
-        "vmix-js-utils": "^4.0.16",
+        "vmix-js-utils": "^4.0.19",
         "web-midi-api": "^2.2.5",
-        "webmidi": "^2.5.1",
-        "shared": "file:../shared"
+        "webmidi": "^2.5.1"
     }
 }

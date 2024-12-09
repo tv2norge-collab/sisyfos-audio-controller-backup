@@ -44,10 +44,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
     }
 
     totalHeight = () => {
-        return (
-            (this.canvas?.height ?? 400) /
-            (this.meterMax - this.meterMin)
-        )
+        return (this.canvas?.height ?? 400) / (this.meterMax - this.meterMin)
     }
 
     getTotalPeak = () => {
@@ -129,12 +126,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
         if (!context) return
 
         const range = this.meterMax - this.meterMin
-        context.clearRect(
-            0,
-            0,
-            this.canvas.width,
-            this.canvas.height,
-        )
+        context.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
         // lower part
         context.fillStyle = 'rgb(0, 122, 37)'
@@ -142,7 +134,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
             0,
             this.totalHeight() - this.calcLower(),
             this.canvas.height,
-            this.calcLower()
+            this.calcLower(),
         )
 
         // middle part
@@ -151,7 +143,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
             0,
             this.totalHeight() * (range - this.meterTest) - this.calcMiddle(),
             this.canvas.width,
-            this.calcMiddle()
+            this.calcMiddle(),
         )
 
         // upper part (too high/clip)
@@ -160,7 +152,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
             0,
             this.totalHeight() * (range - this.meterZero) - this.calcUpper(),
             this.canvas.width,
-            this.calcUpper()
+            this.calcUpper(),
         )
 
         // windowed peak
@@ -174,7 +166,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
             0,
             this.totalHeight() - windowPeak,
             this.canvas.width,
-            2
+            2,
         )
 
         // absolute peak
@@ -187,7 +179,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
             0,
             this.totalHeight() - this.getTotalPeak(),
             this.canvas.width,
-            2
+            2,
         )
 
         window.requestAnimationFrame(this.paintVuMeter)
@@ -195,13 +187,7 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
 
     render() {
         return (
-            <div
-                className="vumeter-body"
-                style={{
-                    height: this.totalHeight() + 30,
-                }}
-                onClick={this.resetTotalPeak}
-            >
+            <div className="vumeter-body" onClick={this.resetTotalPeak}>
                 <canvas
                     className="vumeter-canvas"
                     style={{
@@ -220,10 +206,8 @@ export class VuMeter extends React.PureComponent<VuMeterInjectedProps> {
 const mapStateToProps = (state: any, props: any): VuMeterInjectedProps => {
     return {
         faderIndex: props.faderIndex,
-        channel: props.channel
+        channel: props.channel,
     }
 }
 
-export default connect<VuMeterInjectedProps, any, any>(mapStateToProps)(
-    VuMeter
-)
+export default connect<VuMeterInjectedProps, any, any>(mapStateToProps)(VuMeter)

@@ -2,7 +2,7 @@ import {
     MixerProtocol,
     FxParam,
     VuLabelConversionType,
-    MixerConnectionTypes
+    MixerConnectionTypes,
 } from '../MixerProtocolInterface'
 
 export const Atem: MixerProtocol = {
@@ -38,6 +38,10 @@ export const Atem: MixerProtocol = {
                         mixerMessage: '',
                         label: 'RR',
                     },
+                    {
+                        mixerMessage: '',
+                        label: 'MONO',
+                    },
                 ],
                 // CHANNEL_OUT_GAIN: [{ mixerMessage: '' }],
                 // CHANNEL_VU?: Array<IMixerMessageProtocol>
@@ -65,6 +69,10 @@ export const Atem: MixerProtocol = {
                     {
                         mixerMessage: '',
                         label: 'RR',
+                    },
+                    {
+                        mixerMessage: '',
+                        label: 'MONO',
                     },
                 ],
                 // CHANNEL_OUT_GAIN: [{ mixerMessage: '' }],

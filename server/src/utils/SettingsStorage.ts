@@ -78,12 +78,14 @@ export const saveSettings = (settings: any) => {
 }
 
 export const loadSnapshotState = (
+
     numberOfChannels: NumberOfChannels[],
     numberOfFaders: number,
     fileName: string,
     loadAll: boolean
 ) => {
     try {
+
         const stateFromFile: ShotStorage = JSON.parse(
             fs.readFileSync(fileName, 'utf8')
         )
