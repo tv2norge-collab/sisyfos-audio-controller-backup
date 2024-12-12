@@ -523,20 +523,21 @@ class Channel extends React.Component<
         )
     }
 
-    channelLayoutLink = () => {
+    channelOptions = () => {
         if (
             this.props.settings.thirdInRowButton !==
-            ThirdInRowButtonType.LINK_CHANNELS
+                ThirdInRowButtonType.LINK_CHANNELS &&
+            this.props.settings.thirdInRowButton !==
+                ThirdInRowButtonType.CHANNEL_OPTIONS
         )
             return null
         return (
             <div className="channel-layout">
-                {!this.props.fader.capabilities?.isLinkableSecondary && (
-                    <ChannelLayoutSettingsButton
-                        fader={this.props.fader}
-                        faderIndex={this.props.faderIndex}
-                    />
-                )}
+                <ChannelLayoutSettingsButton
+                    fader={this.props.fader}
+                    faderIndex={this.props.faderIndex}
+                />
+
                 <div className="channel-stereo-link-button">
                     {this.props.fader.capabilities?.isLinkablePrimary &&
                         ((this.props.fader.isLinked && <LinkedIcon />) || (
@@ -576,8 +577,7 @@ class Channel extends React.Component<
                     {this.ignoreButton()}
                     {this.muteButton()}
                     {this.amixButton()}
-                    {window.mixerProtocol.protocol ===
-                        MixerConnectionTypes.vMix && this.channelLayoutLink()}
+                    {this.channelOptions()}
                 </div>
                 <div className="fader">
                     {this.handleVuMeter()}

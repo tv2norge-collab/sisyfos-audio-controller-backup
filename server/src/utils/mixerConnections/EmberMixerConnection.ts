@@ -22,6 +22,8 @@ import {
 import { EmberElement, NumberedTreeNode } from 'emberplus-connection/dist/model'
 import { STORAGE_FOLDER } from '../SettingsStorage'
 import { MixerConnection } from '.'
+import { sendVuLevel } from '../vuServer'
+import { VuType } from '../../../../shared/src/utils/vu-server-types'
 
 export class EmberMixerConnection implements MixerConnection {
     mixerProtocol: MixerProtocol
@@ -82,9 +84,6 @@ export class EmberMixerConnection implements MixerConnection {
             this.emberNodeObject = []
             this.isSubscribedToChannel = []
             this.emberConnection.tree = []
-            // this.emberConnection.discard()
-            // delete this.emberConnection
-            // this.setupEmberSocket()
         })
         this.emberConnection.on('connected', async () => {
             logger.info('Found Ember connection')
@@ -96,16 +95,19 @@ export class EmberMixerConnection implements MixerConnection {
             })
             global.mainThreadHandler.updateMixerOnline(this.mixerIndex)
 
-            const req = await this.emberConnection.getDirectory(
-                this.emberConnection.tree,
-            )
-
-            await req.response
-
-            this.setupMixerConnection()
+            try {
+                const req = await this.emberConnection.getDirectory(this.emberConnection.tree)
+                await req.response
+                await this.setupMixerConnection()
+           }
+            catch (error) {
+                logger.error(`Error initiating directory request: ${error}`)
+            }
         })
         logger.info('Connecting to Ember')
-        this.emberConnection.connect()
+        this.emberConnection.connect().catch((e) => {
+            logger.error(`Error when connecting to Ember: ${e}, ${typeof e === 'object' ? e.stack : ''}`)
+        })    
     }
 
     private async setupMixerConnection() {
@@ -198,14 +200,23 @@ export class EmberMixerConnection implements MixerConnection {
                 )
             }
         }
-    }
+
+        if (protocol.CHANNEL_VU) {
+            await this.subscribeVUMeter(
+                chNumber,
+                Number(typeIndex),
+                channelTypeIndex
+            )
+        }    }
 
     private async subscribeToMc2ChannelOnline(
         chNumber: number,
         typeIndex: number,
         channelTypeIndex: number,
     ) {
-        const mixerMessage = 'Channels.Inputs.${channel}.Fader'
+        const mixerMessage = typeIndex === 0 ? 
+            'Channels.Inputs.${channel}.Fader' : 
+            'Channels.Groups.${channel}.Fader'
         const channel =
             state.channels[0].chMixerConnection[this.mixerIndex].channel[chNumber - 1]
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
@@ -267,14 +278,15 @@ export class EmberMixerConnection implements MixerConnection {
             )
             if (!node) return
 
-            await this.emberConnection.subscribe(
+            const subsription = await this.emberConnection.subscribe(
                 node as NumberedTreeNode<EmberElement>,
                 cb,
             )
 
+            await subsription.response
             cb(node)
         } catch (e) {
-            logger.data(e).debug('Error when subscribing to fader label')
+            logger.data(e).error('Error when subscribing to node: ' + mixerMessage)
         }
     }
 
@@ -337,8 +349,12 @@ export class EmberMixerConnection implements MixerConnection {
                 }
             },
         )
-        this.emberNodeObject[chNumber - 1] =
-            await this.emberConnection.getElementByPath(mixerMessage)
+        try {
+            this.emberNodeObject[chNumber - 1] =
+                await this.emberConnection.getElementByPath(mixerMessage)
+        } catch (e) {
+            logger.error('Error when subscribing to faderlevel: ' + mixerMessage)
+        }
     }
 
     private async subscribeChannelName(
@@ -700,6 +716,31 @@ export class EmberMixerConnection implements MixerConnection {
         )
     }
 
+    private async subscribeVUMeter(
+        chNumber: number,
+        typeIndex: number,
+        channelTypeIndex: number,
+    ) {
+        const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
+        const mixerMessage =
+            this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_VU[0]
+                .mixerMessage
+        await this.subscribeToEmberNode(
+            channelTypeIndex,
+            mixerMessage,
+            (node) => {
+                if (node.contents.type !== Model.ElementType.Parameter) return
+
+                const value = Number(node.contents.value)
+                if (Number.isNaN(value)) return
+
+                const factor = node.contents.factor ?? 1
+
+                sendVuLevel(assignedFaderIndex, VuType.Channel, 0, dbToFloat(value / factor))
+            },
+        )
+    }
+
     private sendOutMessage(
         mixerMessage: string,
         channelIndex: number,
@@ -710,14 +751,16 @@ export class EmberMixerConnection implements MixerConnection {
 
         this.emberConnection
             .getElementByPath(message)
-            .then((element: any) => {
+            .then(async (element: any) => {
                 if (element.contents.factor && typeof value === 'number') {
                     value *= element.contents.factor
                 }
                 logger.trace(
                     `Sending out message: ${message}\n  val: ${value}\n  typeof: ${typeof value}`,
                 )
-                this.emberConnection.setValue(element, value)
+                await (
+                    await this.emberConnection.setValue(element, value)
+                ).response
             })
             .catch((error: any) => {
                 logger.data(error).error('Ember Error')
@@ -942,10 +985,12 @@ export class EmberMixerConnection implements MixerConnection {
             )
 
             if (loadFunction.contents.type === Model.ElementType.Function) {
-                this.emberConnection.invoke(
-                    loadFunction as any,
-                    data.sceneAddress,
-                )
+                await (
+                    await this.emberConnection.invoke(
+                        loadFunction as any,
+                        data.sceneAddress
+                    )
+                ).response
             }
         }
     }

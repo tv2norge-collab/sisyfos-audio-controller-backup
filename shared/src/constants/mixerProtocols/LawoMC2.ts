@@ -116,6 +116,16 @@ export const LawoMC2: MixerProtocol = {
                         zero: 0,
                     },
                 ],
+                CHANNEL_VU: [
+                    {
+                        mixerMessage: 'Channels.Inputs.${channel}.Metering.Main Level',
+                        value: true,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ]
             },
             toMixer: {
                 CHANNEL_OUT_GAIN: [
@@ -258,29 +268,6 @@ export const LawoMC2: MixerProtocol = {
                         minLabel: -128,
                     },
                 ],
-                CHANNEL_INPUT_SELECTOR: [
-                    {
-                        mixerMessage:
-                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Left to Both',
-                        value: 0,
-                        type: 'bool',
-                        label: 'LR',
-                    },
-                    {
-                        mixerMessage:
-                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Left to Both',
-                        value: true,
-                        type: 'bool',
-                        label: 'LL',
-                    },
-                    {
-                        mixerMessage:
-                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Right to Both',
-                        value: true,
-                        type: 'bool',
-                        label: 'RR',
-                    },
-                ],
                 PFL: [
                     {
                         mixerMessage: 'Channels.Groups.${channel}.Listen.PFL',
@@ -312,6 +299,16 @@ export const LawoMC2: MixerProtocol = {
                         zero: 0,
                     },
                 ],
+                CHANNEL_VU: [
+                    {
+                        mixerMessage: 'Channels.Groups.${channel}.Metering.Main Level',
+                        value: true,
+                        type: 'boolean',
+                        min: -128,
+                        max: 12,
+                        zero: 0,
+                    },
+                ]
             },
             toMixer: {
                 CHANNEL_OUT_GAIN: [
@@ -347,29 +344,6 @@ export const LawoMC2: MixerProtocol = {
                         zero: 0,
                         maxLabel: 12,
                         minLabel: -128,
-                    },
-                ],
-                CHANNEL_INPUT_SELECTOR: [
-                    {
-                        mixerMessage:
-                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Left to Both',
-                        value: 0,
-                        type: 'bool',
-                        label: 'LR',
-                    },
-                    {
-                        mixerMessage:
-                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Left to Both',
-                        value: 1,
-                        type: 'bool',
-                        label: 'LL',
-                    },
-                    {
-                        mixerMessage:
-                            'Channels.Groups.${channel}.Signal Processing.Input Mixer.Input Right to Both',
-                        value: 1,
-                        type: 'bool',
-                        label: 'RR',
                     },
                 ],
                 PFL_ON: [

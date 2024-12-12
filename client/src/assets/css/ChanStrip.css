@@ -153,7 +153,9 @@
     margin-left: 50px;
 }
 .inp-comp-del-group .input-buttons.disabled {
-    visibility: hidden;
+    opacity: 0.2;
+    pointer-events: none;
+    cursor: not-allowed;
 }
 .content > .input-buttons {
     width: 30px;
@@ -161,7 +163,9 @@
     margin-left: 50px;
 }
 .content > .input-buttons.disabled {
-    visibility: hidden;
+    opacity: 0.2;
+    pointer-events: none;
+    cursor: not-allowed;
 }
 
 .input-buttons > .input-select {

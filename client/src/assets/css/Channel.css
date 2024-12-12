@@ -297,7 +297,9 @@
 }
 
 .channel-body .input-buttons.disabled {
-    visibility: hidden;
+    opacity: 0.2;
+    pointer-events: none;
+    cursor: not-allowed;
 }
 
 .channel-body .input-buttons > .input-select {

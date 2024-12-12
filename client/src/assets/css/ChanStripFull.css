@@ -143,8 +143,11 @@
     margin-left: 50px;
 }
 .chstrip-full-content > .input-buttons.disabled {
-    visibility: hidden;
+    opacity: 0.2;
+    pointer-events: none;
+    cursor: not-allowed;
 }
+
 
 .input-buttons > .input-select {
     outline: none;
