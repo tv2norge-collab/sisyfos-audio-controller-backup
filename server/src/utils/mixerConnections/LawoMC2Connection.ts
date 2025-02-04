@@ -24,7 +24,7 @@ import { MixerConnection } from '.'
 import { sendVuLevel } from '../vuServer'
 import { VuType } from '../../../../shared/src/utils/vu-server-types'
 
-export class EmberMixerConnection implements MixerConnection {
+export class LawoMC2Connection implements MixerConnection {
     mixerProtocol: MixerProtocol
     mixerIndex: number
     emberConnection: EmberClient
@@ -106,9 +106,9 @@ export class EmberMixerConnection implements MixerConnection {
         })
         this.emberConnection.on('streamUpdate', (path: string, value: number) => {
             // This log should be removed in production:
-            console.log('Stream Update:' + JSON.stringify({ path, value }, null, 2))
+            logger.trace('Stream Update:' + JSON.stringify({ path, value }, null, 2))
             const refTofader = this.meteringRef[path]
-            if (refTofader && Date.now() - refTofader.lastUpdated > 1000) {
+            if (refTofader && Date.now() - refTofader.lastUpdated > 100) {
                 this.meteringRef[path].lastUpdated = Date.now()
                 sendVuLevel(
                     refTofader.faderIndex,
@@ -138,7 +138,7 @@ export class EmberMixerConnection implements MixerConnection {
                 channelTypeIndex < numberOfChannels;
                 channelTypeIndex++
             ) {
-                await this.setupFaderSubscriptions(
+                await this.subscribeToMc2ChannelOnline(
                     chNumber,
                     Number(typeIndex),
                     channelTypeIndex,
@@ -191,7 +191,7 @@ export class EmberMixerConnection implements MixerConnection {
             )
 
         if (protocol.CHANNEL_INPUT_SELECTOR) {
-            await this.subscribeChannelInputSelector(
+            await this.subscribeToMc2InputSelector(
                 chNumber,
                 Number(typeIndex),
                 channelTypeIndex,
@@ -207,6 +207,56 @@ export class EmberMixerConnection implements MixerConnection {
         }
     }
 
+    private async subscribeToMc2ChannelOnline(
+        chNumber: number,
+        typeIndex: number,
+        channelTypeIndex: number,
+    ) {
+        const mixerMessage = typeIndex === 0 ? 
+            'Channels.Inputs.${channel}.Fader' : 
+            'Channels.Groups.${channel}.Fader'
+        const channel =
+            state.channels[0].chMixerConnection[this.mixerIndex].channel[chNumber - 1]
+        const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
+
+        if (assignedFaderIndex < 0) return
+
+        await this.subscribeToEmberNode(
+            channelTypeIndex,
+            mixerMessage,
+            async (node: Model.NumberedTreeNode<Model.EmberNode>) => {
+                if (node.contents.isOnline) {
+                    logger.info(`Channel ${chNumber} online`)
+                    if (!this.isSubscribedToChannel[chNumber - 1]) {
+                        this.isSubscribedToChannel[chNumber - 1] = true
+                        await this.setupFaderSubscriptions(
+                            chNumber,
+                            typeIndex,
+                            channelTypeIndex,
+                        )
+                    }
+                    store.dispatch({
+                        type: FaderActionTypes.SHOW_CHANNEL,
+                        faderIndex: assignedFaderIndex,
+                        showChannel: true,
+                    })
+                    global.mainThreadHandler.updatePartialStore(
+                        assignedFaderIndex,
+                    )
+                } else {
+                    logger.info(`Channel ${chNumber} offline`)
+                    store.dispatch({
+                        type: FaderActionTypes.SHOW_CHANNEL,
+                        faderIndex: assignedFaderIndex,
+                        showChannel: false,
+                    })
+                    global.mainThreadHandler.updatePartialStore(
+                        assignedFaderIndex,
+                    )
+                }
+            },
+        )
+    }
     private async subscribeToEmberNode(
         channelTypeIndex: number,
         mixerMessage: string,
@@ -234,7 +284,7 @@ export class EmberMixerConnection implements MixerConnection {
             await subsription.response
             cb(node)
         } catch (e) {
-            logger.data(e).error('Error when subscribing to node: ' + mixerMessage)
+            logger.data(e).error('Error when subscribing to node: ' + channelName)
         }
     }
 
@@ -460,51 +510,101 @@ export class EmberMixerConnection implements MixerConnection {
         )
     }
 
-    private async subscribeChannelInputSelector(
+    private async subscribeToMc2InputSelector(
         chNumber: number,
         typeIndex: number,
         channelTypeIndex: number,
     ) {
-        const channel =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[chNumber - 1]
+        // subscription for enabling input selectors
+        // Future: Add a CHECK_CAPABILITY feature in mixer protocol.
+        const mixerMessage =
+            typeIndex === 0
+                ? 'Channels.Inputs.${channel}.Channel States.Stereo'
+                : 'Channels.Groups.${channel}.Channel States.Stereo'
+
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
-        for (const i in this.mixerProtocol.channelTypes[typeIndex].fromMixer
-            .CHANNEL_INPUT_SELECTOR) {
-            const proto =
-                this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                    .CHANNEL_INPUT_SELECTOR[i]
-            const mixerMessage = proto.mixerMessage
+        await this.subscribeToEmberNode(
+            channelTypeIndex,
+            mixerMessage,
+            (node) => {
+                logger.trace(
+                    `Update received for ch inp sel capability: ${
+                        (node.contents as Model.Parameter).value
+                    }`,
+                )
+                store.dispatch({
+                    type: FaderActionTypes.SET_CAPABILITY,
+                    faderIndex: assignedFaderIndex,
+                    capability: 'hasInputSelector',
+                    enabled: (node.contents as Model.Parameter)
+                        .value as boolean,
+                })
+                global.mainThreadHandler.updatePartialStore(assignedFaderIndex)
+            },
+        )
+        // subscribe to input selectors
+        let llState = false
+        let rrState = false
 
-            await this.subscribeToEmberNode(
-                channelTypeIndex,
-                mixerMessage,
-                (node) => {
-                    logger.trace(
-                        `Receiving input selector from Ch "${chNumber}", val: ${i}: ${
-                            (node.contents as Model.Parameter).value
-                        }`,
-                    )
-
-                    let value = (node.contents as Model.Parameter).value
-
-                    if (value === proto.value) {
-                        logger.trace(
-                            `Dispatching input selector Ch "${chNumber}", selected: ${
-                                i + 1
-                            }`,
-                        )
-                        store.dispatch({
-                            type: FaderActionTypes.SET_INPUT_SELECTOR,
-                            faderIndex: assignedFaderIndex,
-                            selected: Number(i) + 1,
-                        })
-                    }
-                    global.mainThreadHandler.updatePartialStore(
-                        assignedFaderIndex,
-                    )
-                },
-            )
+        const updateState = () => {
+            if (llState && !rrState) {
+                logger.trace(`Input selector state: ll`)
+                store.dispatch({
+                    type: FaderActionTypes.SET_INPUT_SELECTOR,
+                    faderIndex: assignedFaderIndex,
+                    selected: 2,
+                })
+            } else if (rrState && !llState) {
+                logger.trace(`Input selector state: rr`)
+                store.dispatch({
+                    type: FaderActionTypes.SET_INPUT_SELECTOR,
+                    faderIndex: assignedFaderIndex,
+                    selected: 3,
+                })
+            } else {
+                logger.trace(`Input selector state: lr`)
+                store.dispatch({
+                    type: FaderActionTypes.SET_INPUT_SELECTOR,
+                    faderIndex: assignedFaderIndex,
+                    selected: 1,
+                })
+            }
+            global.mainThreadHandler.updatePartialStore(assignedFaderIndex)
         }
+
+        const llMixerMessage =
+            this.mixerProtocol.channelTypes[typeIndex].fromMixer
+                .CHANNEL_INPUT_SELECTOR[1].mixerMessage
+        const rrMixerMessage =
+            this.mixerProtocol.channelTypes[typeIndex].fromMixer
+                .CHANNEL_INPUT_SELECTOR[2].mixerMessage
+
+        await this.subscribeToEmberNode(
+            channelTypeIndex,
+            llMixerMessage,
+            (node) => {
+                logger.trace(
+                    `Update received for ch inp sel: ll: ${
+                        (node.contents as Model.Parameter).value
+                    }`,
+                )
+                llState = (node.contents as Model.Parameter).value as boolean
+                updateState()
+            },
+        )
+        await this.subscribeToEmberNode(
+            channelTypeIndex,
+            rrMixerMessage,
+            (node) => {
+                logger.trace(
+                    `Update received for ch inp sel: rr: ${
+                        (node.contents as Model.Parameter).value
+                    }`,
+                )
+                rrState = (node.contents as Model.Parameter).value as boolean
+                updateState()
+            },
+        )
     }
 
     private async subscribeAMix(
@@ -512,16 +612,40 @@ export class EmberMixerConnection implements MixerConnection {
         typeIndex: number,
         channelTypeIndex: number,
     ) {
-        const channel =
-            state.channels[0].chMixerConnection[this.mixerIndex].channel[chNumber - 1]
         const assignedFaderIndex = this.getAssignedFaderIndex(chNumber - 1)
+        const mixerMessage =  typeIndex === 0 ?
+            'Channels.Inputs.${channel}.Automix.Automix Group Assignment' :
+            'Channels.Groups.${channel}.Automix.Automix Group Assignment'
+        await this.subscribeToEmberNode(
+            channelTypeIndex,
+            mixerMessage,
+            (node) => {
+                logger.trace(
+                    `Update received for amix capability: ${
+                        (node.contents as Model.Parameter).value
+                    }`,
+                )
+                store.dispatch({
+                    type: FaderActionTypes.SET_CAPABILITY,
+                    faderIndex: assignedFaderIndex,
+                    capability: 'hasAMix',
+                    enabled:
+                        (node.contents as Model.Parameter).value !==
+                        ((node.contents as Model.Parameter).maximum || 63), // max is unassigned, max = 63 in firmware 6.4
+                })
+                global.mainThreadHandler.updatePartialStore(
+                    assignedFaderIndex,
+                )
+            },
+        )
+    
         // subscribe to amix
-        const mixerMessage =
+        const aMixMessage =
             this.mixerProtocol.channelTypes[typeIndex].fromMixer.CHANNEL_AMIX[0]
                 .mixerMessage
         await this.subscribeToEmberNode(
             channelTypeIndex,
-            mixerMessage,
+            aMixMessage,
             (node) => {
                 logger.trace(
                     `Receiving AMix from Ch "${chNumber}", val: ${
@@ -572,6 +696,8 @@ export class EmberMixerConnection implements MixerConnection {
             const subscription = await this.emberConnection.subscribe(
                 node as NumberedTreeNode<EmberElement>,
                 (node) => {
+                    console.log('This subscription should only update on initialization : ', mixerMessage)
+                    console.log('The rest should be handled by the streamUpdate event')
                     logger.trace('VU meter update' + JSON.stringify(node.contents, null, 2))
                     if (node.contents.type !== Model.ElementType.Parameter) return
                     const value = Number(node.contents.value)
@@ -724,10 +850,42 @@ export class EmberMixerConnection implements MixerConnection {
             state.channels[0].chMixerConnection[this.mixerIndex].channel[
                 channelIndex
             ]
-        // let channelType = channel.channelType
-        // let channelTypeIndex = channel.channelTypeIndex
+        let channelType = channel.channelType
+        let channelTypeIndex = channel.channelTypeIndex
 
         logger.debug(`select in ${channelIndex} ${inputSelected}`)
+
+        if (inputSelected === 1) {
+            // LR
+            this.sendOutMessage(
+                this.mixerProtocol.channelTypes[0].toMixer
+                    .CHANNEL_INPUT_SELECTOR[1].mixerMessage,
+                channelTypeIndex + 1,
+                false as any,
+            )
+            this.sendOutMessage(
+                this.mixerProtocol.channelTypes[0].toMixer
+                    .CHANNEL_INPUT_SELECTOR[2].mixerMessage,
+                channelTypeIndex + 1,
+                false as any,
+            )
+        } else if (inputSelected === 2) {
+            // LL
+            this.sendOutMessage(
+                this.mixerProtocol.channelTypes[0].toMixer
+                    .CHANNEL_INPUT_SELECTOR[1].mixerMessage,
+                channelTypeIndex + 1,
+                true as any,
+            )
+        } else if (inputSelected === 3) {
+            // RR
+            this.sendOutMessage(
+                this.mixerProtocol.channelTypes[0].toMixer
+                    .CHANNEL_INPUT_SELECTOR[2].mixerMessage,
+                channelTypeIndex + 1,
+                true as any,
+            )
+        }
 
         return true
     }
@@ -792,6 +950,24 @@ export class EmberMixerConnection implements MixerConnection {
 
     async loadMixerPreset(presetName: string) {
         logger.info(`Loading preset: ${presetName}`)
+        let data = JSON.parse(
+            fs
+                .readFileSync(path.resolve(STORAGE_FOLDER, presetName))
+                .toString(),
+        )
+
+        const loadFunction = await this.emberConnection.getElementByPath(
+            this.mixerProtocol.loadPresetCommand[0].mixerMessage,
+        )
+
+        if (loadFunction.contents.type === Model.ElementType.Function) {
+            await (
+                await this.emberConnection.invoke(
+                    loadFunction as any,
+                    data.sceneAddress
+                )
+            ).response
+            }
     }
 
     injectCommand(command: string[]) {}
@@ -806,36 +982,15 @@ export class EmberMixerConnection implements MixerConnection {
         const pad = (inp: string | number, l: number) =>
             ('   ' + inp).substr(-l)
 
-        if (this.mixerProtocol.leadingZeros) {
-            return command.replace('${channel}', pad(channel, 2))
-        } else {
-            return command.replace('${channel}', channel + '')
-        }
+        const channelName = '_' + Number(channel).toString(16) // 'INP ' + pad(channel, 3)
+        return command.replace('${channel}', channelName)
     }
 
     private _floatToFaderLevel(value: number, typeIndex: number) {
-        const range =
-            this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                .CHANNEL_OUT_GAIN[0].max -
-            this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                .CHANNEL_OUT_GAIN[0].min
-        const min =
-            this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                .CHANNEL_OUT_GAIN[0].min
-
-        return value / range + min        
+        return floatToDB(value)
     }
 
     private _faderLevelToFloat(value: number, typeIndex: number) {
-        const range =
-            this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                .CHANNEL_OUT_GAIN[0].max -
-            this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                .CHANNEL_OUT_GAIN[0].min
-        const min =
-            this.mixerProtocol.channelTypes[typeIndex].fromMixer
-                .CHANNEL_OUT_GAIN[0].min
-
-        return (value - min) / range
+        return dbToFloat(value)
     }
 }

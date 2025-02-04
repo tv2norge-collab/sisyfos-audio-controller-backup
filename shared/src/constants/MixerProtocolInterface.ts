@@ -5,6 +5,7 @@ export enum MixerConnectionTypes {
     'YamahaQlCl' = 'YamahaQlCl',
     'GenericMidi' = 'GenericMidi',
     'LawoRuby' = 'LawoRuby',
+    'LawoMC2' = 'LawoMC2',
     'CasparCG' = 'CasparCG',
     'SSLSystemT' = 'SSLSystemT',
     'Studer' = 'Studer',

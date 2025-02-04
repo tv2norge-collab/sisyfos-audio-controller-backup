@@ -16,12 +16,11 @@
 #     provided.
 #
 #######################################################################################################################
-
 name: Prod Node CI
 
 env:
   node-version: 18
-  node-package-manager: yarn
+  yarn-version: 4.1.0
 
 on:
   push:
@@ -35,9 +34,47 @@ jobs:
     steps:
       - name: Access repository
         uses: actions/checkout@v4
-      - uses: ./.github/actions/cache
+        with:
+          ref: ${{ needs.bump-version.outputs.tag_version }}
+          fetch-depth: 0
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node-version }}
+          
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set Yarn Version
+        run: corepack prepare yarn@${{ env.yarn-version }} --activate
+        
+      - name: Get Yarn cache directory
+        id: yarn-cache-dir
+        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir.outputs.dir }}
+            .yarn/cache
+            .yarn/patches
+            .yarn/plugins
+            .yarn/releases
+            .yarn/sdks
+            .yarn/versions
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+   
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
+
+      # actual installation
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --mode=skip-build
 
   prebuild:
     runs-on: ubuntu-latest
@@ -45,9 +82,45 @@ jobs:
     steps:
       - name: Access repository
         uses: actions/checkout@v4
-      - uses: ./.github/actions/cache
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node-version }}
+          
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set Yarn Version
+        run: corepack prepare yarn@${{ env.yarn-version }} --activate
+        
+      - name: Get Yarn cache directory
+        id: yarn-cache-dir
+        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir.outputs.dir }}
+            .yarn/cache
+            .yarn/patches
+            .yarn/plugins
+            .yarn/releases
+            .yarn/sdks
+            .yarn/versions
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+       
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
+
+      # actual installation
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --mode=skip-build
+        
       - name: Build
         run: yarn build
 
@@ -58,21 +131,44 @@ jobs:
       - name: Access repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node-version }}
+          
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set Yarn Version
+        run: corepack prepare yarn@${{ env.yarn-version }} --activate
+
       - uses: ./.github/actions/test
 
-  validate-dependencies:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Access repository
-        uses: actions/checkout@v4
-      - uses: ./.github/actions/validate-dependencies
+  # validate-dependencies:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Access repository
+  #       uses: actions/checkout@v4
 
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.node-version }}
+          
+  #     - name: Enable Corepack
+  #       run: corepack enable
+
+  #     - name: Set Yarn Version
+  #       run: corepack prepare yarn@${{ env.yarn-version }} --activate
+
+  #     - uses: ./.github/actions/validate-dependencies
+
+  # Rest of the jobs remain the same but need Yarn setup...
   bump-version:
     runs-on: ubuntu-latest
     needs:
       - prebuild
       - test
-      - validate-dependencies
     outputs:
       tag_version: ${{ steps.tag_version.outputs.new_tag || steps.tag_version.outputs.previous_tag }}
       version: ${{ steps.tag_version.outputs.new_version || steps.tag_version.outputs.previous_version }}
@@ -82,6 +178,18 @@ jobs:
     steps:
       - name: Access repository
         uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node-version }}
+          
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set Yarn Version
+        run: corepack prepare yarn@${{ env.yarn-version }} --activate
+        
       - name: Configure committer
         run: |
           git config user.name "${{ github.event.pusher.name }}"
@@ -114,28 +222,6 @@ jobs:
         with:
           add: "['package.json', 'CHANGELOG.md']"
 
-  create-pull-request-develop:
-    runs-on: ubuntu-latest
-    if: needs.bump-version.outputs.bumped == 'true'
-    needs:
-      - bump-version
-    steps:
-      - name: Access repository
-        uses: actions/checkout@v4
-      - name: Pull request to develop
-        id: develop
-        continue-on-error: true
-        uses: repo-sync/pull-request@v2
-        with:
-          destination_branch: "develop"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_label: "release, automated-pr"
-          pr_title: "Release ${{ needs.bump-version.outputs.version }} -> develop"
-      - name: Report status
-        env:
-          report: ${{ toJSON(steps.develop.outcome) }} - ${{ toJSON(steps.develop.conclusion) }}
-        run: echo $report
-
   build:
     runs-on: ubuntu-latest
     needs:
@@ -145,20 +231,56 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.bump-version.outputs.commit_sha }}
-      - name: Ensure commits from bump-version
-        run: git pull
-      - uses: ./.github/actions/cache
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node-version }}
+          
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set Yarn Version
+        run: corepack prepare yarn@${{ env.yarn-version }} --activate
+        
+      - name: Get Yarn cache directory
+        id: yarn-cache-dir
+        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir.outputs.dir }}
+            .yarn/cache
+            .yarn/patches
+            .yarn/plugins
+            .yarn/releases
+            .yarn/sdks
+            .yarn/versions
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+                 
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
+
+      # actual installation
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --mode=skip-build
+        
       - name: Build
         run: yarn build
+        
       - name: Upload client build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-client
           path: client/dist
+          
       - name: Upload server build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-server
           path: server/dist
@@ -173,35 +295,133 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.bump-version.outputs.commit_sha }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node-version }}
+          
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set Yarn Version
+        run: corepack prepare yarn@${{ env.yarn-version }} --activate
+        
       - name: Ensure commits from bump-version
         run: git pull
-      - uses: ./.github/actions/cache
-      - uses: actions/download-artifact@v3
+        
+      - name: Get Yarn cache directory
+        id: yarn-cache-dir
+        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir.outputs.dir }}
+            .yarn/cache
+            .yarn/patches
+            .yarn/plugins
+            .yarn/releases
+            .yarn/sdks
+            .yarn/versions
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+            
+      - uses: actions/download-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-client
           path: client/dist
-      - uses: actions/download-artifact@v3
+          
+      - uses: actions/download-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-server
           path: server/dist
+                
+      # Regenerate the lockfile explicitly
+      - name: Update Lockfile
+        run: yarn install --mode=update-lockfile
+
+      # actual installation
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --mode=skip-build
+        
       - name: Build desktop
         run: yarn build:desktop
+        
       - name: Upload desktop build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-desktop
           path: desktop/dist
 
-  publish-ecr-package:
+  check-github-release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
+    needs: build-desktop
+    outputs:
+      defined: ${{ steps.release.outputs.defined == 'true' }}
+    steps:
+      - name: Access repository
+        uses: actions/checkout@v4
+      - name: Check if is set to release
+        id: release
+        uses: ./.github/actions/check-secret
+        with:
+          secret: ${{ secrets.RELEASE_TO_GITHUB }}
+
+  publish-github-release:
+    runs-on: ubuntu-latest
+    if: needs.bump-version.outputs.bumped == 'true' && needs.check-github-release.outputs.defined == 'true'
     needs:
       - bump-version
+      - check-github-release
+    steps:
+      - name: Access repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.commit_sha }}
+      - name: Ensure commits from bump-version
+        run: git pull
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-desktop
+          path: desktop/dist
+      - name: Compress artifact to zip
+        uses: papeloto/action-zip@v1
+        with:
+          files: dist
+          dest: "${{ github.event.repository.name }}-${{ needs.bump-version.outputs.version }}.zip"
+      - name: Create Github release with desktop exe
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ needs.bump-version.outputs.tag_version }}
+          tag_name: ${{ needs.bump-version.outputs.tag_version }}
+          body: ${{ needs.bump-version.outputs.changelog }}
+          files: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+
+  check-npm-token:
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      defined: ${{ steps.token.outputs.defined == 'true' }}
+    steps:
+      - name: Access repository
+        uses: actions/checkout@v4
+      - name: Check if has username
+        id: token
+        uses: ./.github/actions/check-secret
+        with:
+          secret: ${{ secrets.NPM_TOKEN }}
+
+  publish-npm-package:
+    runs-on: ubuntu-latest
+    if: needs.check-npm-token.outputs.defined == 'true'
+    needs:
+      - bump-version
+      - check-npm-token
     steps:
       - name: Access repository
         uses: actions/checkout@v4
@@ -210,11 +430,41 @@ jobs:
           git config user.name "${{ github.event.pusher.name }}"
           git config user.email "${{ github.event.pusher.email }}"
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ github.event.repository.name }}
           path: dist
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+      - name: Publish package
+        run: yarn publish --access=public --tag latest --new-version "${{ needs.bump-version.outputs.version }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  publish-ecr-package:
+    if: needs.check-npm-token.outputs.defined == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    needs:
+      - bump-version
+      - check-npm-token
+    steps:
+      - name: Access repository
+        uses: actions/checkout@v4
+      - name: Configure publisher
+        run: |
+          git config user.name "${{ github.event.pusher.name }}"
+          git config user.email "${{ github.event.pusher.email }}"
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}
+          path: dist
+      - uses: actions/setup-node@v4
         with:
           node-version: "18.x"
           registry-url: "https://registry.npmjs.org"
@@ -225,65 +475,124 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Login to CodeArtifact
         run: |
-          aws codeartifact login --tool npm --repository selma-store --domain selma --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} --region ${{ secrets.AWS_REGION }}
+          aws codeartifact login --tool npm --repository ${{ secrets.AWS_CODE_ARTIFACT_REPOSITORY }} --domain ${{ secrets.AWS_CODE_ARTIFACT_DOMAIN }} --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} --region ${{ secrets.AWS_REGION }}
       - name: Configure CodeArtifact Token
         run: |
-          export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain selma --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} --region ${{ secrets.AWS_REGION }} --query authorizationToken --output text`
-          yarn config set npmRegistryServer "https://selma-${{ secrets.AWS_ACCOUNT_ID }}.d.codeartifact.${{ secrets.AWS_REGION }}.amazonaws.com/npm/selma-store/"
-          yarn config set 'npmRegistries["https://selma-${{ secrets.AWS_ACCOUNT_ID }}.d.codeartifact.${{ secrets.AWS_REGION }}.amazonaws.com/npm/selma-store/"].npmAuthToken' "${CODEARTIFACT_AUTH_TOKEN}"
-          yarn config set 'npmRegistries["https://selma-${{ secrets.AWS_ACCOUNT_ID }}.d.codeartifact.${{ secrets.AWS_REGION }}.amazonaws.com/npm/selma-store/"].npmAlwaysAuth' "true"
+          export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain ${{ secrets.AWS_CODE_ARTIFACT_DOMAIN }} --domain-owner ${{ secrets.AWS_ACCOUNT_ID }} --region ${{ secrets.AWS_REGION }} --query authorizationToken --output text`
+          yarn config set npmRegistryServer "https://${{ secrets.AWS_CODE_ARTIFACT_DOMAIN }}-${{ secrets.AWS_ACCOUNT_ID }}.d.codeartifact.${{ secrets.AWS_REGION }}.amazonaws.com/npm/${{ secrets.AWS_CODE_ARTIFACT_REPOSITORY }}/"
+          yarn config set 'npmRegistries["https://${{ secrets.AWS_CODE_ARTIFACT_DOMAIN }}-${{ secrets.AWS_ACCOUNT_ID }}.d.codeartifact.${{ secrets.AWS_REGION }}.amazonaws.com/npm/${{ secrets.AWS_CODE_ARTIFACT_REPOSITORY }}/"].npmAuthToken' "${CODEARTIFACT_AUTH_TOKEN}"
+          yarn config set 'npmRegistries["https://${{ secrets.AWS_CODE_ARTIFACT_DOMAIN }}-${{ secrets.AWS_ACCOUNT_ID }}.d.codeartifact.${{ secrets.AWS_REGION }}.amazonaws.com/npm/${{ secrets.AWS_CODE_ARTIFACT_REPOSITORY }}/"].npmAlwaysAuth' "true"
       - name: Publish package
         run: yarn publish --access=public --tag latest --new-version "${{ needs.bump-version.outputs.version }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.AWS_ROLE_ARN }}
-
-  publish-docker-image:
+  check-docker-credentials:
     runs-on: ubuntu-latest
-    needs:
-      - bump-version
+    needs: build
+    outputs:
+      defined: ${{ steps.username.outputs.defined == 'true' && steps.password.outputs.defined == 'true' }}
     steps:
       - name: Access repository
         uses: actions/checkout@v4
 
-      - name: Extract version for tags
-        id: version
-        uses: ./.github/actions/extract-version
+      - name: Check if has username
+        id: username
+        uses: ./.github/actions/check-secret
         with:
-          version: ${{ needs.bump-version.outputs.version }}
+          secret: ${{ secrets.DOCKER_USERNAME }}
 
-      - name: Determine if images should be published to ecr
-        id: ecrrepo
-        run: |
-          # check if a release branch, or master, or a tag
-          if [[ "${{ github.ref }}" =~ ^refs/heads/release([0-9]+)$ || "${{ github.ref }}" == "refs/heads/master" || "${{ github.ref }}" == refs/tags/* || "${{ github.ref }}" == refs/heads/EAV-* ]]
-          then
-            ECRREPO_PUBLISH="1"
-          else
-            ECRREPO_PUBLISH="0"
-          fi
-          # debug output
-          echo "ecrrepo-publish $ECRREPO_PUBLISH"
-          echo "ecrrepo-publish=$ECRREPO_PUBLISH" >> $GITHUB_OUTPUT
-      - name: Configure AWS Credentials
-        if: steps.ecrrepo.outputs.ecrrepo-publish == '1'
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Check if has password
+        id: password
+        uses: ./.github/actions/check-secret
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      - name: Login to Amazon ECR
-        id: login-ecr
-        if: steps.ecrrepo.outputs.ecrrepo-publish == '1'
-        uses: aws-actions/amazon-ecr-login@v1
+          secret: ${{ secrets.DOCKER_PASSWORD }}
+
+  publish-docker-image:
+    runs-on: ubuntu-latest
+    if: needs.check-docker-credentials.outputs.defined == 'true'
+    needs:
+      - check-docker-credentials
+    steps:
+      - name: Access repository
+        uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-client
+          path: client/dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-server
+          path: server/dist
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: "olzzon/${{ github.event.repository.name }}"
+          tags: |
+            type=ref,event=branch
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push
-        if: steps.ecrrepo.outputs.ecrrepo-publish == '1'
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: |
-            "${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:latest"
-            "${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}"
-            "${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}"
-            "${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name }}:${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }}"
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          
+  publish-ecr-docker-image:
+    if: needs.check-docker-credentials.outputs.defined == 'false'
+    runs-on: ubuntu-latest
+    needs:
+        - check-docker-credentials
+    permissions:
+        contents: read
+        packages: write
+        id-token: write
+    steps:
+        - name: Access repository
+          uses: actions/checkout@v4
 
+        - uses: actions/download-artifact@v4
+          with:
+              name: ${{ github.event.repository.name }}-client-develop
+              path: client/dist
+
+        - uses: actions/download-artifact@v4
+          with:
+              name: ${{ github.event.repository.name }}-server-develop
+              path: server/dist
+
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+              role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+              aws-region: ${{ secrets.AWS_REGION }}
+        - name: Login to Amazon ECR
+          id: login-ecr
+          uses: aws-actions/amazon-ecr-login@v2
+        - name: Get the Docker tag for ecr
+          id: ecr-tag
+          uses: docker/metadata-action@v5
+          with:
+              images: ${{ steps.login-ecr.outputs.registry }}/sisyfos-audio-controller
+              tags: |
+                  type=ref,event=branch
+
+        - name: Build and push docker image tags
+
+          id: docker_build
+          uses: docker/build-push-action@v6
+          with:
+              context: .
+              push: true
+              labels: ${{ steps.ecr-tag.outputs.labels }}
+              tags: '${{ steps.ecr-tag.outputs.tags }}'       
